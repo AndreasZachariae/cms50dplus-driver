@@ -2,8 +2,14 @@
 Raw ppg data from cms50e device
 This repository allows you to record the raw live data from the cms50e and and save them in a file. You can edit it to plot these real time ppg values.
 
+## How to start
+```bash
+sudo dmesg # find USB port number
+sudo python3 cms50e.py /dev/ttyUSB0 data
+sudo python3 decod.py data ppg2.txt
+```
 
-![Alt text](/cms50e.jpg "Contec Pulse Oximeter CMS50E")
+![Alt text](/docs/cms50e.jpg "Contec Pulse Oximeter CMS50E")
 *NB : There are apparently different versions of the cms50e. Not having found a code allowing me to retrieve the data from the version I had (above picture), I created this one. Moreover, the difference between the versions is often the serial opening baud and the real time raw data exchange protocol. With a little luck, you will find anyway other repository related to these versions;-) .*
 
 ## Usage
@@ -18,7 +24,7 @@ Follow these instructions to retrieve raw real time data from the cms50e with th
 6. Run the script `decod.py` to convert theses raw data to ppg values into a file, from where you can read to operate on Matlab for example : `python3 decod.py data ppg.txt`. `data` is the ppg raw data output file and `ppg.txt` is the file which contains line by line ppg values. Now you can process this in Matlab or python to get the ppg curve.
 
 Raw PPG from CMS50E (HR=63 on CMS50E).png
-![Alt text](/ppg.png "Raw ppg curve from cms50e")
+![Alt text](/docs/ppg.png "Raw ppg curve from cms50e")
 
 ## Few remarks
 - The code works both for Windows and Ubuntu
