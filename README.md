@@ -9,6 +9,14 @@ sudo python3 cms50e.py /dev/ttyUSB0 data
 sudo python3 decod.py data ppg2.txt
 ```
 
+## Further ressources
+- This [documentation](https://www.tranzoa.net/~alex/blog/wp-content/uploads/2018/08/CMS60DWCommunication-protocol-of-pulse-oximeter-V7.0.pdf) seems to be most accurate for the model version I have (not everything matches)
+- Inital [repo](https://github.com/titinho11/CMS50E-raw-ppg-data/tree/master) this work is based on 
+- related project [repo](https://github.com/MarkMLl/Contec_cms50dplus/tree/main) in Pascal
+- this is a very detailed [repo](https://github.com/atbrask/CMS50Dplus/tree/master) for CMS50dplus but apparently also wrong data format
+- this is a helpful [article](https://www.atbrask.dk/?p=244), espacially the tips in the comments on newer versions
+
+
 ![Alt text](/docs/cms50e.jpg "Contec Pulse Oximeter CMS50E")
 *NB : There are apparently different versions of the cms50e. Not having found a code allowing me to retrieve the data from the version I had (above picture), I created this one. Moreover, the difference between the versions is often the serial opening baud and the real time raw data exchange protocol. With a little luck, you will find anyway other repository related to these versions;-) .*
 
