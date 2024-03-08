@@ -12,7 +12,7 @@ from threading import Timer
 # 0x7D is package type for downlink commands to the device
 # 0xA1 ask for continous real-time data
 # 0x80 is unused data
-cmd_querry = b'\x7d\x81\xa1\x80\x80\x80\x80\x80\x80'
+cmd_query = b'\x7d\x81\xa1\x80\x80\x80\x80\x80\x80'
 
 # 0xAF Inform device beeing connected (every 5 seconds)
 cmd_maintain = b'\x7d\x81\xaf\x80\x80\x80\x80\x80\x80'
@@ -52,31 +52,47 @@ def signal_handler(sig, frame):
         myfile.write(str(tf))
     sys.exit(0)
 
-def maintain():
-    serial.write(cmd_querry)
-    print("sending data query")
+def send_query():
+    if serial_connection.is_open:
+        serial_connection.write(cmd_query)
+        print("sending data query")
+    else:
+        try:
+            serial_connection.open()
+            time.sleep(0.1)
+            serial_connection.flush()
+            print('Connected: '+ str(serial_connection.is_open))
+        except OSError as err:
+            print("Serial connection is closed ", str(err))
+            print("Device was disconnected")
+            rt.stop()
 
 def decode_data(data):
+    #### DIFFERS FROM THE DOCUMENTATION
     bytes_hex = [data.hex()[i:i+2] for i in range(0 ,len(data.hex()) ,2)]
     bytes_binary = [bin(int(hex_value, 16))[2:].zfill(8) for hex_value in bytes_hex]
-
-    if len(bytes_hex) != 9:
-        print("ERROR: Invalid data length:", len(bytes_hex))
-        return
-    
-    # first byte, real-time data package 0x01 = 0000 0001
-    if bytes_binary[0] != '00000001':
-        print("ERROR: No real-time data package")
-        return
 
     # print(bytes_hex)
     # print(bytes_binary)
     # print([int(str(byte),2) for byte in bytes_binary])
 
-    # following bytes have always first position set to 1 = 1... ....
+    if len(bytes_hex) == 0:
+        print("ERROR: No data recieved, Probably device is not turned on")
+        return
+
+    if len(bytes_hex) != 9:
+        print("ERROR: Invalid data length:", len(bytes_hex))
+        return
+    
+    # first byte, real-time data package must be 0x01 = 00000001
+    if bytes_binary[0] != '00000001':
+        print("ERROR: No real-time data package")
+        return
+
+    # following bytes have always bit7 set to 1 = 1xxxxxxx
     # second byte, status infos
     if bytes_binary[1][7] == '1':
-        print("ERROR: Finger is not in the device")
+        print("WARN: Finger is not in the device")
         return
     if bytes_binary[1][6] == '1':
         print("pulse beep sound")
@@ -86,55 +102,58 @@ def decode_data(data):
         print("searching time too long")
     signal_strength = min(int(str(bytes_binary[0])[1:4],2), 8) # if larger than 8, default to 8
 
-    # third byte
-    if bytes_binary[2][7] == '1':
-        print("searching for pulse")
-    # waveform_data = int(str(bytes_binary[2])[1:7], 2)
+    # fourth byte, waveform data
+    wave = int(str(bytes_binary[3])[1:8], 2)
 
-    # fourth byte
-    # 6-8 positions meaningless, reservation
-    # if bytes_binary[3][5] == '1':
-    #     print("PI data is invalid")
-    # bar_graph_data = int(str(bytes_binary[3])[1:4], 2)
+    # sixth byte, pulse rate value 
+    bpm = int(str(bytes_binary[5])[1:8], 2)
 
-    # fifth byte
-    # if bytes_binary[4] == '11111111':
-    #     print("Pulse rate is invalid")
-    # pulse_rate = int(str(bytes_binary[4])[1:8], 2)
-
-    # sixth byte, pulse rate value #### DIFFERS FROM THE DOCUMENTATION
-    pulse_rate = int(str(bytes_binary[5])[1:8], 2)
-
-    # seventh byte, spo2 value #### DIFFERS FROM THE DOCUMENTATION
+    # seventh byte, spo2 value
     spo2 = int(str(bytes_binary[6])[1:8], 2)
     if spo2 > 100:
         print("SpO2 is invalid")
+        spo2 = -1
 
-    print(pulse_rate, spo2)
+    print(bpm, spo2, wave)
 
 
 signal.signal(signal.SIGINT, signal_handler)
 if os.path.exists(sys.argv[2]):
     os.remove(sys.argv[2])
-serial = serial.Serial(sys.argv[1],
-                    baudrate=115200, #in my device, this is the baudrate where to open the serial, in other devices try 4800, 19200...
-                    timeout=2,
-                    xonxoff=1,
-                    bytesize=serial.EIGHTBITS,
-                    stopbits=serial.STOPBITS_ONE,
-                    parity=serial.PARITY_NONE) #another important looking like parameter, setting the parity to NONE
-                                    
-serial.write(cmd_querry)
+
+try:
+    serial_connection = serial.Serial(sys.argv[1],
+                        baudrate=115200, #in my device, this is the baudrate where to open the serial, in other devices try 4800, 19200...
+                        timeout=2,
+                        xonxoff=1,
+                        bytesize=serial.EIGHTBITS,
+                        stopbits=serial.STOPBITS_ONE,
+                        parity=serial.PARITY_NONE) #another important looking like parameter, setting the parity to NONE
+
+    print("Port: "+sys.argv[1], "Baudrate: "+str(serial_connection.baudrate), 'Connected: '+ str(serial_connection.is_open))
+except OSError as err:
+    print("Cant open specified port: "+str(err))
+    print("Device is not connected or the port is wrong")
+    sys.exit(1)
+
+# serial_connection.write(cmd_query)
 
 file = sys.argv[2]
-rt = RepeatedTimer(5, maintain) #send cmd_maintain every 5sec to maintain the stream session
+rt = RepeatedTimer(5, send_query) #send cmd_maintain every 5sec to maintain the stream session
 print("Recording...\n^C to stop.")
 
 ts = calendar.timegm(time.gmtime()) #10 characters to skip when decoding data
 with open(sys.argv[2], "a") as myfile:
         myfile.write(str(ts))
 while True:
-    data = serial.read(9) #read each byte
+    try:
+        data = serial_connection.read(9) #read each byte
+    except serial.SerialException:
+        print("Trying to reconnect...")
+        serial_connection.close()
+        time.sleep(1)
+        rt.start()
+        continue
     decode_data(data)
     # print(data)
     with open(sys.argv[2], "a") as myfile:
