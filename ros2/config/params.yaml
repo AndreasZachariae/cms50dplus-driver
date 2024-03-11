@@ -1,0 +1,3 @@
+driver_node:
+  ros__parameters:
+    serialport: "/dev/ttyUSB0"
