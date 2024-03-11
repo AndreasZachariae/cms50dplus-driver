@@ -46,7 +46,8 @@ RUN mkdir -p /home/$USER/ros2_ws/src
 ##############################################################################
 WORKDIR /home/$USER/ros2_ws/src
 
-COPY cms50dplus_driver ./cms50dplus_driver
+COPY cms50dplus_driver ./cms50dplus_ros2_driver/cms50dplus_driver
+COPY ros2 ./cms50dplus_ros2_driver/ros2
 
 USER $USER 
 
