@@ -1,0 +1,31 @@
+{
+    "editor.formatOnSave": true,
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.indexing": true,
+    "python.analysis.extraPaths": [
+        "/opt/ros/humble/lib/python3.10/site-packages/"
+    ],
+    "python.autoComplete.extraPaths": [
+        "/opt/ros/humble/lib/python3.10/site-packages",
+    ],
+    "python.envFile": "${workspaceFolder}/.env",
+    "autoDocstring.docstringFormat": "numpy",
+    "autoDocstring.startOnNewLine": true,
+    "cmake.configureOnOpen": false,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8",
+        "editor.formatOnSave": true,
+    },
+    "autopep8.args": [
+        "--max-line-length",
+        "120"
+    ],
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/bower_components": true,
+        "**/*.code-search": true,
+        "**/build": true,
+        "**/install": true,
+        "**/log": true
+    }
+}
