@@ -5,8 +5,7 @@ This repository allows you to record the raw live data from the cms50e and and s
 ## How to start
 ```bash
 sudo dmesg # find USB port number
-sudo python3 cms50e.py /dev/ttyUSB0 data
-sudo python3 decod.py data ppg2.txt
+sudo python3 cms50dplus.py /dev/ttyUSB0
 ```
 
 ## Further ressources
