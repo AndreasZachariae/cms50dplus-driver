@@ -14,7 +14,6 @@ def generate_launch_description():
         'src',
         'cms50dplus_ros2_driver',
         'ros2',
-        'cms50dplus_ros2_driver',
         'config',
         'params.yaml'
     )
@@ -25,6 +24,7 @@ def generate_launch_description():
             executable='driver_node',
             name='driver_node',
             output='screen',
+            emulate_tty=True,
             parameters=[config]
         )
     ])
