@@ -13,11 +13,12 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN apt-get update && apt-get install --no-install-recommends -y \
     python3-pip \
     python3-colcon-common-extensions \
+    ros-$ROS_DISTRO-plotjuggler-ros \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install -U \
     pip \
-    setuptools \
+    setuptools==58.2.0 \
     pyserial
 
 ##############################################################################
