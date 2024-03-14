@@ -5,7 +5,12 @@ import time
 import sys
 import argparse
 
-from repeated_timer import RepeatedTimer
+try:
+    # if loaded as python module
+    from repeated_timer import RepeatedTimer
+except ImportError:
+    # if loaded from ros2 framework
+    from cms50dplus_driver.repeated_timer import RepeatedTimer
 
 # Decoded with datasheet https://www.tranzoa.net/~alex/blog/wp-content/uploads/2018/08/CMS60DWCommunication-protocol-of-pulse-oximeter-V7.0.pdf
 
@@ -33,22 +38,22 @@ class CMS50DPlus:
                   'Connected: ' + str(self.serial_connection.is_open))
         except OSError as err:
             print("Cant open specified port: "+str(err))
-            print("Device is not connected or the port is wrong")
+            print("Device is not connected or the port is wrong or no sudo permissions")
             sys.exit(1)
 
         self.timer = RepeatedTimer(5, self.send_query)  # send cmd_maintain every 5sec to maintain the stream session
         print("Recording...\n^C to stop.")
 
-    def loop(self):
+    def loop(self) -> tuple[int, int, int] | None:
         try:
-            data = self.serial_connection.read(9)  # read each 9-byte package
+            raw_data = self.serial_connection.read(9)  # read each 9-byte package
         except serial.SerialException:
             print("Trying to reconnect...")
             self.serial_connection.close()
             time.sleep(1)
             self.timer.start()
-            return
-        self.decode_data(data)
+            return None
+        return self.decode_data(raw_data)
 
     def send_query(self):
         if self.serial_connection.is_open:
@@ -65,7 +70,7 @@ class CMS50DPlus:
                 print("Device was disconnected")
                 self.timer.stop()
 
-    def decode_data(self, data):
+    def decode_data(self, data) -> tuple[int, int, int]:
         # DIFFERS FROM THE DOCUMENTATION
         bytes_hex = [data.hex()[i:i+2] for i in range(0, len(data.hex()), 2)]
         bytes_binary = [bin(int(hex_value, 16))[2:].zfill(8) for hex_value in bytes_hex]
@@ -112,7 +117,7 @@ class CMS50DPlus:
             print("SpO2 is invalid")
             spo2 = -1
 
-        print(bpm, spo2, wave)
+        return bpm, spo2, wave
 
 
 def main():
@@ -124,7 +129,12 @@ def main():
 
     while True:
         try:
-            driver.loop()
+            data = driver.loop()
+
+            if data is not None:
+                bpm, spo2, wave = data
+                print(bpm, spo2, wave)
+
         except KeyboardInterrupt:
             driver.timer.stop()
             print('Recording stopped.')
